@@ -42,11 +42,31 @@ class GameScene {
 	/// </summary>
 	void Draw();
 
+
   private: // メンバ変数
 	DirectXCommon* dxCommon_ = nullptr;
 	Input* input_ = nullptr;
 	Audio* audio_ = nullptr;
 	DebugText* debugText_ = nullptr;
+
+	//テクスチャハンドル
+	uint32_t textureHandle_ = 0;
+	//サウンドデータハンドル
+	uint32_t soundDataHandle_ = 0;
+	//音声再生ハンドル
+	uint32_t voiceHandle_ = 0;
+	//値を表示する変数
+	int32_t value_ = 0;
+	//スプライト
+	Sprite* sprite_ = nullptr;
+	// 3Dモデル
+	Model* model_ = nullptr;
+
+	//ワールドトランスフォーム(ワールド変換行列)
+	WorldTransform worldTransform_;
+	//ビュープロジェクション(カメラ変換行列)
+	ViewProjection viewProjection_;
+
 
 	/// <summary>
 	/// ゲームシーン用
