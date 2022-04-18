@@ -6,7 +6,7 @@ using namespace DirectX;
 
 GameScene::GameScene() {}
 
-GameScene::~GameScene() { delete model_; }
+GameScene::~GameScene() {}
 
 void GameScene::Initialize() {
 
@@ -42,14 +42,15 @@ void GameScene::Update() {
 	                         std::to_string(worldTransform_.rotation_.y) + std::string(",") +
 	                         std::to_string(worldTransform_.rotation_.z) + std::string(")");
 
-	std::string strDebug_3 = std::string("scale:(") + 
-							 std::to_string(worldTransform_.scale_.x) + std::string(",") + 
-							 std::to_string(worldTransform_.scale_.y) + std::string(",") + 
-							 std::to_string(worldTransform_.scale_.z) + std::string(")");
+	std::string strDebug_3 = std::string("scale:(") + std::to_string(worldTransform_.scale_.x) +
+	                         std::string(",") + std::to_string(worldTransform_.scale_.y) +
+	                         std::string(",") + std::to_string(worldTransform_.scale_.z) +
+	                         std::string(")");
 
-	debugText_->Print(strDebug_1, 50,  50, 1.0f);
-	debugText_->Print(strDebug_2, 50,  75, 1.0f);
+	debugText_->Print(strDebug_1, 50, 50, 1.0f);
+	debugText_->Print(strDebug_2, 50, 75, 1.0f);
 	debugText_->Print(strDebug_3, 50, 100, 1.0f);
+
 }
 
 void GameScene::Draw() {
