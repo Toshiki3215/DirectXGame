@@ -21,15 +21,18 @@ void GameScene::Initialize() {
 
 	model_ = Model::Create();
 
-	worldTransform_.scale_ = {1.0f, 1.0f, 0.5f};
+	for (size_t i = 0; i < _countof(worldTransform_); i++) {
 
-	worldTransform_.rotation_ = {0.0f,0.0f, 0.0f};
+		worldTransform_[i].rotation_ = {0.0f, 0.0f, 0.0f};
 
-	worldTransform_.translation_ = {0.0f, 0.0f, 0.0f};
+		worldTransform_[i].translation_ = {0.0f, 0.0f, 0.0f};
 
-	viewProjection_.eye = {0, 0, -10};
+		worldTransform_[i].Initialize();
+	}
 
-	worldTransform_.Initialize();
+	worldTransform_[0].scale_ = {1.0f, 1.0f, 0.5f};
+	worldTransform_[1].scale_ = {0.2f, 0.2f, 0.2f};
+
 	viewProjection_.Initialize();
 }
 
@@ -43,40 +46,49 @@ void GameScene::Update()
 	//回転角度(2度ずつ(180/90))
 	const float rSpeed = XM_PI / 90.0f;
 
-	//A,Dで回転
-	if (input_->PushKey(DIK_D)) {
-		worldTransform_.rotation_.y += rSpeed;
-	} else if (input_->PushKey(DIK_A)) {
-		worldTransform_.rotation_.y += -rSpeed;
+	//←、→で回転
+	if (input_->PushKey(DIK_RIGHT)) {
+		worldTransform_[0].rotation_.y += rSpeed;
+	} else if (input_->PushKey(DIK_LEFT)) {
+		worldTransform_[0].rotation_.y += -rSpeed;
 	}
 
 	//単位ベクトルのターゲット座標
-	target = {sinf(worldTransform_.rotation_.y), 0, cosf(worldTransform_.rotation_.y)};
+	target = {sinf(worldTransform_[0].rotation_.y), 0, cosf(worldTransform_[0].rotation_.y)};
 
-	//W,Sで移動
-	if (input_->PushKey(DIK_W)) {
-		worldTransform_.translation_.x += target.x * kSpeed;
-		worldTransform_.translation_.z += target.z * kSpeed;
-	} else if (input_->PushKey(DIK_S)) {
-		worldTransform_.translation_.x += target.x * -kSpeed;
-		worldTransform_.translation_.z += target.z * -kSpeed;
+	//前確認用モデルの座標
+	worldTransform_[1].translation_.x =
+	  sinf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.x;
+
+	worldTransform_[1].translation_.z =
+	  cosf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.z;
+
+	//↑、↓で移動
+	if (input_->PushKey(DIK_UP)) {
+		worldTransform_[0].translation_.x += target.x * kSpeed;
+		worldTransform_[0].translation_.z += target.z * kSpeed;
+	} else if (input_->PushKey(DIK_DOWN)) {
+		worldTransform_[0].translation_.x += target.x * -kSpeed;
+		worldTransform_[0].translation_.z += target.z * -kSpeed;
 	}
 
-	worldTransform_.UpdateMatrix();
+	worldTransform_[0].UpdateMatrix();
+	worldTransform_[1].UpdateMatrix();
 
-	std::string strDebug_1 = std::string("translation:(") +
-	                         std::to_string(worldTransform_.translation_.x) + std::string(",") +
-	                         std::to_string(worldTransform_.translation_.y) + std::string(",") +
-	                         std::to_string(worldTransform_.translation_.z) + std::string(")");
+	// ----- デバック ----- //
+	/*std::string strDebug_1 = std::string("translation:(") +
+	                         std::to_string(worldTransform_[0].translation_.x) + std::string(",") +
+	                         std::to_string(worldTransform_[0].translation_.y) + std::string(",") +
+	                         std::to_string(worldTransform_[0].translation_.z) + std::string(")");
 
 	std::string strDebug_2 = std::string("rotation:(") +
-	                         std::to_string(worldTransform_.rotation_.x) + std::string(",") +
-	                         std::to_string(worldTransform_.rotation_.y) + std::string(",") +
-	                         std::to_string(worldTransform_.rotation_.z) + std::string(")");
+	                         std::to_string(worldTransform_[0].rotation_.x) + std::string(",") +
+	                         std::to_string(worldTransform_[0].rotation_.y) + std::string(",") +
+	                         std::to_string(worldTransform_[0].rotation_.z) + std::string(")");
 
 	debugText_->Print(strDebug_1, 50, 50, 1.0f);
 
-	debugText_->Print(strDebug_2, 50, 75, 1.0f);
+	debugText_->Print(strDebug_2, 50, 75, 1.0f);*/
 
 }
 
@@ -105,7 +117,9 @@ void GameScene::Draw() {
 
 	/// <summary>
 	/// ここに3Dオブジェクトの描画処理を追加できる
-	model_->Draw(worldTransform_, viewProjection_, textureHandle_);
+	for (size_t i = 0; i < _countof(worldTransform_); i++) {
+		model_->Draw(worldTransform_[i], viewProjection_, textureHandle_);
+	}
 	/// </summary>
 
 	// 3Dオブジェクト描画後処理
