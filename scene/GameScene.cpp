@@ -35,37 +35,34 @@ void GameScene::Initialize() {
 
 void GameScene::Update()
 { 
-	XMFLOAT3 move = {0, 0, 0};
+	XMFLOAT3 target = {0, 0, 0};
 
-	const float kSpeed = 0.2f;
+	//移動速さ
+	const float kSpeed = 0.1f;
 
-	if (input_->PushKey(DIK_W))
-	{
-		move = {0, 0, kSpeed};
-	} else if (input_->PushKey(DIK_S))
-	{
-		move = {0, 0, -kSpeed};
-	}
+	//回転角度(2度ずつ(180/90))
+	const float rSpeed = XM_PI / 90.0f;
 
-	XMFLOAT3 move2 = {0, 0, 0};
-
-	const float kTSpeed = XM_PI / 90.0f;
-
+	//A,Dで回転
 	if (input_->PushKey(DIK_D)) {
-		move2 = {0,kTSpeed,0};
+		worldTransform_.rotation_.y += rSpeed;
 	} else if (input_->PushKey(DIK_A)) {
-		move2 = {0,-kTSpeed,0};
+		worldTransform_.rotation_.y += -rSpeed;
 	}
 
-	worldTransform_.translation_.z += move.z;
-	worldTransform_.rotation_.y += move2.y;
+	//単位ベクトルのターゲット座標
+	target = {sinf(worldTransform_.rotation_.y), 0, cosf(worldTransform_.rotation_.y)};
 
-	//viewProjection_.eye.x += move2.y;
-	//viewProjection_.eye.y -= move2.y;
-	//viewProjection_.eye.z += move.z;
+	//W,Sで移動
+	if (input_->PushKey(DIK_W)) {
+		worldTransform_.translation_.x += target.x * kSpeed;
+		worldTransform_.translation_.z += target.z * kSpeed;
+	} else if (input_->PushKey(DIK_S)) {
+		worldTransform_.translation_.x += target.x * -kSpeed;
+		worldTransform_.translation_.z += target.z * -kSpeed;
+	}
 
 	worldTransform_.UpdateMatrix();
-	//viewProjection_.UpdateMatrix();
 
 	std::string strDebug_1 = std::string("translation:(") +
 	                         std::to_string(worldTransform_.translation_.x) + std::string(",") +
