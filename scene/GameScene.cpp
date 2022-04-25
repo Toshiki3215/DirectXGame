@@ -33,6 +33,9 @@ void GameScene::Initialize() {
 	worldTransform_[0].scale_ = {1.0f, 1.0f, 0.5f};
 	worldTransform_[1].scale_ = {0.2f, 0.2f, 0.2f};
 
+	viewProjection_.eye = {0.0f, 0.0f, -5.0f};
+	viewProjection_.target = worldTransform_[0].translation_;
+
 	viewProjection_.Initialize();
 }
 
@@ -56,6 +59,13 @@ void GameScene::Update()
 	//単位ベクトルのターゲット座標
 	target = {sinf(worldTransform_[0].rotation_.y), 0, cosf(worldTransform_[0].rotation_.y)};
 
+	//カメラ追従
+	viewProjection_.eye.x =
+	  -sinf(worldTransform_[0].rotation_.y) * 5 + worldTransform_[0].translation_.x;
+
+	viewProjection_.eye.z =
+	  -cosf(worldTransform_[0].rotation_.y) * 5 + worldTransform_[0].translation_.z;
+
 	//前確認用モデルの座標
 	worldTransform_[1].translation_.x =
 	  sinf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.x;
@@ -74,6 +84,8 @@ void GameScene::Update()
 
 	worldTransform_[0].UpdateMatrix();
 	worldTransform_[1].UpdateMatrix();
+
+	viewProjection_.UpdateMatrix();
 
 	// ----- デバック ----- //
 	/*std::string strDebug_1 = std::string("translation:(") +
