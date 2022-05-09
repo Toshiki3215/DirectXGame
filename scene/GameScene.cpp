@@ -23,13 +23,21 @@ void GameScene::Initialize() {
 
 		worldTransform_[i].rotation_ = {0.0f, 0.0f, 0.0f};
 
-		worldTransform_[i].translation_ = {0.0f, 0.0f, 5.0f};
+		if (i<2) {
+			worldTransform_[i].translation_ = {0.0f, 0.0f, 5.0f};
+		} else if (i==2) {
+			worldTransform_[2].translation_ = {5.0f, 0.0f, 8.0f};
+		} else if (i==3) {
+			worldTransform_[3].translation_ = {-4.0f, 0.0f, -8.0f};
+		}
 
 		worldTransform_[i].Initialize();
 	}
 
 	worldTransform_[0].scale_ = {1.0f, 1.0f, 0.5f};
 	worldTransform_[1].scale_ = {0.2f, 0.2f, 0.2f};
+	worldTransform_[2].scale_ = {1.0f, 1.0f, 1.0f};
+	worldTransform_[3].scale_ = {1.0f, 1.0f, 1.0f};
 
 	viewProjection_.eye = {0.0f, 0.0f, -10.0f};
 	viewProjection_.target = worldTransform_[0].translation_;
