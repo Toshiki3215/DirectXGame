@@ -9,7 +9,6 @@
 #include "Sprite.h"
 #include "ViewProjection.h"
 #include "WorldTransform.h"
-#include <DirectXMath.h>
 
 /// <summary>
 /// ゲームシーン

@@ -2,8 +2,6 @@
 #include "TextureManager.h"
 #include <cassert>
 
-using namespace DirectX;
-
 GameScene::GameScene() {}
 
 GameScene::~GameScene() {}
