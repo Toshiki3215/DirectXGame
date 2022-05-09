@@ -6,9 +6,7 @@ using namespace DirectX;
 
 GameScene::GameScene() {}
 
-GameScene::~GameScene() { 
-	delete model_; 
-}
+GameScene::~GameScene() { delete model_; }
 
 void GameScene::Initialize() {
 
@@ -25,7 +23,7 @@ void GameScene::Initialize() {
 
 		worldTransform_[i].rotation_ = {0.0f, 0.0f, 0.0f};
 
-		worldTransform_[i].translation_ = {0.0f, 0.0f, 0.0f};
+		worldTransform_[i].translation_ = {0.0f, 0.0f, 5.0f};
 
 		worldTransform_[i].Initialize();
 	}
@@ -33,15 +31,14 @@ void GameScene::Initialize() {
 	worldTransform_[0].scale_ = {1.0f, 1.0f, 0.5f};
 	worldTransform_[1].scale_ = {0.2f, 0.2f, 0.2f};
 
-	viewProjection_.eye = {0.0f, 0.0f, -5.0f};
+	viewProjection_.eye = {0.0f, 0.0f, -10.0f};
 	viewProjection_.target = worldTransform_[0].translation_;
 
 	viewProjection_.Initialize();
 }
 
-void GameScene::Update()
-{ 
-	XMFLOAT3 target = {0, 0, 0};
+void GameScene::Update() {
+	XMFLOAT3 direction = {0, 0, 0};
 
 	//移動速さ
 	const float kSpeed = 0.1f;
@@ -56,15 +53,32 @@ void GameScene::Update()
 		worldTransform_[0].rotation_.y += -rSpeed;
 	}
 
-	//単位ベクトルのターゲット座標
-	target = {sinf(worldTransform_[0].rotation_.y), 0, cosf(worldTransform_[0].rotation_.y)};
+	//単位ベクトルの向き
+	direction = {sinf(worldTransform_[0].rotation_.y), 0, cosf(worldTransform_[0].rotation_.y)};
+
+	//↑、↓で移動
+	if (input_->PushKey(DIK_UP)) {
+		worldTransform_[0].translation_.x += direction.x * kSpeed;
+		worldTransform_[0].translation_.z += direction.z * kSpeed;
+	} else if (input_->PushKey(DIK_DOWN)) {
+		worldTransform_[0].translation_.x += direction.x * -kSpeed;
+		worldTransform_[0].translation_.z += direction.z * -kSpeed;
+	}
 
 	//カメラ追従
 	viewProjection_.eye.x =
-	  -sinf(worldTransform_[0].rotation_.y) * 5 + worldTransform_[0].translation_.x;
+	  -direction.x * 5 + worldTransform_[0].translation_.x;
+	  // -sinf(worldTransform_[0].rotation_.y);
+	  // -sinf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.x;
 
 	viewProjection_.eye.z =
-	  -cosf(worldTransform_[0].rotation_.y) * 5 + worldTransform_[0].translation_.z;
+	  -direction.z * 5 + worldTransform_[0].translation_.z;
+	  //-cosf(worldTransform_[0].rotation_.y);
+	  // -cosf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.z;
+
+	viewProjection_.target = {
+	  direction.x * 5 + worldTransform_[0].translation_.x, 0,
+	  direction.z * 5 + worldTransform_[0].translation_.z};
 
 	//前確認用モデルの座標
 	worldTransform_[1].translation_.x =
@@ -72,15 +86,6 @@ void GameScene::Update()
 
 	worldTransform_[1].translation_.z =
 	  cosf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.z;
-
-	//↑、↓で移動
-	if (input_->PushKey(DIK_UP)) {
-		worldTransform_[0].translation_.x += target.x * kSpeed;
-		worldTransform_[0].translation_.z += target.z * kSpeed;
-	} else if (input_->PushKey(DIK_DOWN)) {
-		worldTransform_[0].translation_.x += target.x * -kSpeed;
-		worldTransform_[0].translation_.z += target.z * -kSpeed;
-	}
 
 	worldTransform_[0].UpdateMatrix();
 	worldTransform_[1].UpdateMatrix();
@@ -98,9 +103,23 @@ void GameScene::Update()
 	                         std::to_string(worldTransform_[0].rotation_.y) + std::string(",") +
 	                         std::to_string(worldTransform_[0].rotation_.z) + std::string(")");
 
+	std::string strDebug_3 = std::string("eye:(") + std::to_string(viewProjection_.eye.x) +
+	                         std::string(",") + std::to_string(viewProjection_.eye.y) +
+	                         std::string(",") + std::to_string(viewProjection_.eye.z) +
+	                         std::string(")");
+
+	std::string strDebug_4 = std::string("translation2:(") +
+	                         std::to_string(worldTransform_[1].translation_.x) + std::string(",") +
+	                         std::to_string(worldTransform_[1].translation_.y) + std::string(",") +
+	                         std::to_string(worldTransform_[1].translation_.z) + std::string(")");
+
 	debugText_->Print(strDebug_1, 50, 50, 1.0f);
 
-	debugText_->Print(strDebug_2, 50, 75, 1.0f);*/
+	debugText_->Print(strDebug_2, 50, 75, 1.0f);
+
+	debugText_->Print(strDebug_3, 50, 100, 1.0f);
+
+	debugText_->Print(strDebug_4, 50, 125, 1.0f);*/
 
 }
 
