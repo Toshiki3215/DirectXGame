@@ -25,7 +25,14 @@ void GameScene::Initialize() {
 	model_ = Model::Create();
 
 	//ワールドトランスフォームの初期化
-	worldTransform_.Initialize();
+	for (size_t i = 0; i < _countof(worldTransform_); i++) {
+
+		/*worldTransform_[i].rotation_ = {0.0f, 0.0f, 0.0f};
+
+		worldTransform_[i].translation_ = {0.0f, 0.0f, 0.0f};*/
+
+		worldTransform_[i].Initialize();
+	}
 
 	//ビュープロジェクションの初期化
 	viewProjection_.Initialize();
@@ -77,7 +84,10 @@ void GameScene::Draw() {
 	/// <summary>
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	//3Dモデル描画
-	model_->Draw(worldTransform_, debugCamera_->GetViewProjection(), textureHandle_);
+	//model_->Draw(worldTransform_, debugCamera_->GetViewProjection(), textureHandle_);
+	for (size_t i = 0; i < _countof(worldTransform_); i++) {
+		model_->Draw(worldTransform_[i], debugCamera_->GetViewProjection(), textureHandle_);
+	}
 
 	/// </summary>
 
