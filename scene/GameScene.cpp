@@ -27,15 +27,10 @@ void GameScene::Initialize() {
 	//ワールドトランスフォームの初期化
 	for (size_t i = 0; i < _countof(worldTransform_); i++) {
 
-		/*worldTransform_[i].rotation_ = {0.0f, 0.0f, 0.0f};
-
-		worldTransform_[i].translation_ = {0.0f, 0.0f, 0.0f};*/
+		worldTransform_[i].rotation_ = {0.0f, 0.0f, 0.0f};
 
 		worldTransform_[i].Initialize();
 	}
-
-	//ビュープロジェクションの初期化
-	viewProjection_.Initialize();
 
 	//デバッグカメラの生成
 	debugCamera_ = new DebugCamera(1280,720);
@@ -49,12 +44,27 @@ void GameScene::Initialize() {
 	//ライン描画が参照するビュープロジェクションを指定する(アドレス渡し)
 	PrimitiveDrawer::GetInstance()->SetViewProjection(&debugCamera_->GetViewProjection());
 
+	//Z軸回転行列を宣言
+	Matrix4 matRotZ;
+
+	//worldTransform_[0].matWorld_=
+
+	//viewProjection_.eye = {0.0f, 0.0f, 0.0f};
+
+	//ビュープロジェクションの初期化
+	viewProjection_.Initialize();
 }
 
 void GameScene::Update() {
 
 	//デバッグカメラの更新
 	debugCamera_->Update();
+
+	Vector3 camera = debugCamera_->GetViewProjection().eye;
+
+	if (input_->PushKey(DIK_W)) {
+		
+	}
 
 }
 
