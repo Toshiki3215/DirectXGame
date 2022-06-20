@@ -57,14 +57,13 @@ class GameScene {
 	//ワールドトランスフォーム
 	WorldTransform worldTransform_;
 
-	WorldTransform wT;
-
 	//ビュープロジェクション
 	ViewProjection viewProjection_;
 
 	//デバッグカメラ
 	DebugCamera* debugCamera_ = nullptr;
 
+	uint32_t mode = 0;
 
 	/// <summary>
 	/// ゲームシーン用
