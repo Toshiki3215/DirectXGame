@@ -73,7 +73,7 @@ void GameScene::Initialize() {
 
 void GameScene::Update() {
 
-	if (input_->PushKey(DIK_E)) {
+	if (input_->PushKey(DIK_Q)) {
 		if (mode == 0) {
 			mode = 1;
 		} else if (mode==1) {
