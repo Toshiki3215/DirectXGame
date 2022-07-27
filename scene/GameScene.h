@@ -63,6 +63,8 @@ class GameScene {
 	//デバッグカメラ
 	DebugCamera* debugCamera_ = nullptr;
 
+	Vector3 moveTarget;
+
 	/// <summary>
 	/// ゲームシーン用
 	/// </summary>
