@@ -85,8 +85,8 @@ void GameScene::Draw() {
 	Model::PostDraw();
 
 	//ライン描画が参照するビュープロジェクションを指定する(アドレス渡し)
-	PrimitiveDrawer::GetInstance()->DrawLine3d(
-	  Vector3(0, 0, 0), Vector3(10, 0, 10), Vector4(255, 255, 0, 0));
+	/*PrimitiveDrawer::GetInstance()->DrawLine3d(
+	  Vector3(0, 0, 0), Vector3(500, 200, 500), Vector4(255, 0, 0, 0));*/
 
 #pragma endregion
 
