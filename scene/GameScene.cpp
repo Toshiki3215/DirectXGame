@@ -3,6 +3,7 @@
 #include "AxisIndicator.h"
 #include "PrimitiveDrawer.h"
 #include <cassert> 
+#include <random>
 
 GameScene::GameScene() {}
 
@@ -10,6 +11,21 @@ GameScene::~GameScene() {
 	delete model_; 
 	delete debugCamera_;
 }
+
+//乱数シード生成器
+std::random_device seed_gen;
+
+std::random_device seed_gen2;
+
+//メルセンヌ・ツイスターの乱数エンジン
+std::mt19937_64 engine(seed_gen());
+
+std::mt19937_64 engine2(seed_gen2());
+
+//乱数範囲
+std::uniform_real_distribution<float> dist(0, 3.14);
+
+std::uniform_real_distribution<float> dist2(-10, 10);
 
 Matrix4 ScaleMatrix4(Matrix4 matWorld, Vector3 scale);
 
@@ -34,12 +50,26 @@ void GameScene::Initialize() {
 	//3Dモデルの生成
 	model_ = Model::Create();
 
+	//乱数エンジンを渡し、指定範囲からランダムな数値を得る
+	float value = dist(engine);
+
+	float value2 = dist2(engine2);
+
 	//ワールドトランスフォームの初期化
-	worldTransform_.scale_ = {1, 1, 1};
+	for (WorldTransform& worldTransform : worldTransforms_) {
+	
+		//ワールドトランスフォームの初期化
+		worldTransform.Initialize();
 
-	worldTransform_.rotation_ = {0.0f, 0.0f, 0.0f};
+		worldTransform.scale_ = {1, 1, 1};
 
-	worldTransform_.translation_ = {0, 0, 0};
+		worldTransform.rotation_ = {0.0f, value, 0.0f};
+
+		worldTransform.translation_ = {value2, value2, value2};
+
+		worldTransform.matWorld_ = MathUtility::Matrix4Identity();
+	}
+
 
 	Matrix4 matScale;
 
@@ -49,16 +79,6 @@ void GameScene::Initialize() {
 
 	//視点の移動ベクトル
 	moveTarget = Vector3(0, 0, 0);
-
-
-	//ワールドトランスフォームの初期化
-	worldTransform_.Initialize();
-
-	////カメラ視点座標を設定
-	//viewProjection_.eye = {0.0f, 0.0f, -10.0f};
-
-	////カメラ注視点座標を設定
-	//viewProjection_.target = {0, 0, 0};
 
 	//ビュープロジェクションの初期化
 	viewProjection_.Initialize();
@@ -75,7 +95,6 @@ void GameScene::Initialize() {
 	//ライン描画が参照するビュープロジェクションを指定する(アドレス渡し)
 	PrimitiveDrawer::GetInstance()->SetViewProjection(&debugCamera_->GetViewProjection());
 
-	worldTransform_.matWorld_ = MathUtility::Matrix4Identity();
 }
 
 void GameScene::Update() {
@@ -89,49 +108,71 @@ void GameScene::Update() {
 	//移動
 	float kSpeed = 0.1f;
 
-	//↑,↓でY軸拡大縮小
-	if (input_->PushKey(DIK_UP)) {
-		worldTransform_.scale_.y += scaleSize;
-	} else if (input_->PushKey(DIK_DOWN)) {
-		worldTransform_.scale_.y -= scaleSize;
+	//乱数エンジンを渡し、指定範囲からランダムな数値を得る
+	float value = dist(engine);
+
+	float value2 = dist2(engine2);
+
+	////↑,↓でY軸拡大縮小
+	//if (input_->PushKey(DIK_UP)) {
+	//	worldTransform_.scale_.y += scaleSize;
+	//} else if (input_->PushKey(DIK_DOWN)) {
+	//	worldTransform_.scale_.y -= scaleSize;
+	//}
+
+	////←,→でX軸拡大縮小
+	//if (input_->PushKey(DIK_LEFT)) {
+	//	worldTransform_.scale_.x -= scaleSize;
+	//} else if (input_->PushKey(DIK_RIGHT)) {
+	//	worldTransform_.scale_.x += scaleSize;
+	//}
+
+	//// A,Dで回転(Y軸回転)
+	//if (input_->PushKey(DIK_D)) {
+	//	worldTransform_.rotation_.y += rSpeed;
+	//} else if (input_->PushKey(DIK_A)) {
+	//	worldTransform_.rotation_.y -= rSpeed;
+	//}
+
+	//moveTarget = {sinf(worldTransform_.rotation_.y), 0, cosf(worldTransform_.rotation_.y)};
+
+	//// W,Sで移動
+	//if (input_->PushKey(DIK_W)) {
+	//	worldTransform_.translation_.x += moveTarget.x * kSpeed;
+	//	worldTransform_.translation_.z += moveTarget.z * kSpeed;
+	//} else if (input_->PushKey(DIK_S)) {
+	//	worldTransform_.translation_.x += moveTarget.x * -kSpeed;
+	//	worldTransform_.translation_.z += moveTarget.z * -kSpeed;
+	//}
+
+
+	for (WorldTransform& worldTransform : worldTransforms_) {
+		worldTransform.rotation_ = {0.0f, value, 0.0f};
+
+		worldTransform.translation_ = {value2, value2, value2};
+
+		 worldTransform.matWorld_ = MathUtility::Matrix4Identity();
+
+		 worldTransform.matWorld_ = ScaleMatrix4(worldTransform.matWorld_,
+		 worldTransform.scale_);
+
+		 worldTransform.matWorld_ = RotationYMatrix4(worldTransform.matWorld_,
+		 worldTransform.rotation_);
+
+		 worldTransform.matWorld_ = MoveMatrix4(worldTransform.matWorld_,
+		 worldTransform.translation_);
 	}
+	////行列変換
+	//worldTransform_.matWorld_ = MathUtility::Matrix4Identity();
 
-	//←,→でX軸拡大縮小
-	if (input_->PushKey(DIK_LEFT)) {
-		worldTransform_.scale_.x -= scaleSize;
-	} else if (input_->PushKey(DIK_RIGHT)) {
-		worldTransform_.scale_.x += scaleSize;
-	}
+	//worldTransform_.matWorld_ = ScaleMatrix4(worldTransform_.matWorld_, worldTransform_.scale_);
 
-	// A,Dで回転(Y軸回転)
-	if (input_->PushKey(DIK_D)) {
-		worldTransform_.rotation_.y += rSpeed;
-	} else if (input_->PushKey(DIK_A)) {
-		worldTransform_.rotation_.y -= rSpeed;
-	}
+	//worldTransform_.matWorld_ = RotationYMatrix4(worldTransform_.matWorld_, worldTransform_.rotation_);
 
-	moveTarget = {sinf(worldTransform_.rotation_.y), 0, cosf(worldTransform_.rotation_.y)};
+	//worldTransform_.matWorld_ = MoveMatrix4(worldTransform_.matWorld_, worldTransform_.translation_);
 
-	// W,Sで移動
-	if (input_->PushKey(DIK_W)) {
-		worldTransform_.translation_.x += moveTarget.x * kSpeed;
-		worldTransform_.translation_.z += moveTarget.z * kSpeed;
-	} else if (input_->PushKey(DIK_S)) {
-		worldTransform_.translation_.x += moveTarget.x * -kSpeed;
-		worldTransform_.translation_.z += moveTarget.z * -kSpeed;
-	}
-
-	//行列変換
-	worldTransform_.matWorld_ = MathUtility::Matrix4Identity();
-
-	worldTransform_.matWorld_ = ScaleMatrix4(worldTransform_.matWorld_, worldTransform_.scale_);
-
-	worldTransform_.matWorld_ = RotationYMatrix4(worldTransform_.matWorld_, worldTransform_.rotation_);
-
-	worldTransform_.matWorld_ = MoveMatrix4(worldTransform_.matWorld_, worldTransform_.translation_);
-
-	//行列の再計算
-	worldTransform_.TransferMatrix();
+	/*行列の再計算
+	worldTransform.TransferMatrix();*/
 
 	//デバッグカメラの更新
 	debugCamera_->Update();
@@ -164,7 +205,11 @@ void GameScene::Draw() {
 	/// <summary>
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	//3Dモデル描画
-	model_->Draw(worldTransform_, debugCamera_->GetViewProjection(), textureHandle_);
+	for (WorldTransform& worldTransform : worldTransforms_)
+	{
+		model_->Draw(worldTransform, debugCamera_->GetViewProjection(), textureHandle_);
+	
+	}
 
 	/// </summary>
 
