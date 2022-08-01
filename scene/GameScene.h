@@ -55,6 +55,8 @@ class GameScene {
 	Model* model_ = nullptr;
 
 	//ワールドトランスフォーム
+	WorldTransform worldTransform;
+
 	WorldTransform worldTransforms_[100];
 
 	//ビュープロジェクション
@@ -64,6 +66,10 @@ class GameScene {
 	DebugCamera* debugCamera_ = nullptr;
 
 	Vector3 moveTarget;
+
+	float value;
+
+	float value2;
 
 	/// <summary>
 	/// ゲームシーン用
