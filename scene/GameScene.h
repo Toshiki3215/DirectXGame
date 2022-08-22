@@ -10,6 +10,7 @@
 #include "ViewProjection.h"
 #include "WorldTransform.h"
 #include "DebugCamera.h"
+#include "Player.h"
 
 /// <summary>
 /// ゲームシーン
@@ -55,7 +56,7 @@ class GameScene {
 	Model* model_ = nullptr;
 
 	//ワールドトランスフォーム
-	WorldTransform worldTransform_;
+	//WorldTransform worldTransform_;
 
 	//ビュープロジェクション
 	ViewProjection viewProjection_;
@@ -63,8 +64,7 @@ class GameScene {
 	//デバッグカメラ
 	DebugCamera* debugCamera_ = nullptr;
 
-	//uint32_t mode;
-	float rotaCount;
+	/*float rotaCount;
 
 	float rotaPlayer;
 	float count;
@@ -72,7 +72,10 @@ class GameScene {
 	float rotaTime;
 
 	Vector3 moveTarget;
-	Vector3 rotaTarget;
+	Vector3 rotaTarget;*/
+
+	//自キャラ
+	Player* player_ = nullptr;
 
 	/// <summary>
 	/// ゲームシーン用
