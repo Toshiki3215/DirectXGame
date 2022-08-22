@@ -11,8 +11,11 @@ GameScene::~GameScene() {
 	delete debugCamera_;
 }
 
+Matrix4 ScaleMatrix4(Matrix4 matWorld, Vector3 scale);
+
 Matrix4 MoveMatrix4(Matrix4 matWorld, Vector3 translation);
 
+Matrix4 RotationZMatrix4(Matrix4 matWorld, Vector3 rotation);
 Matrix4 RotationYMatrix4(Matrix4 matWorld, Vector3 rotation);
 
 void GameScene::Initialize() {
@@ -28,19 +31,30 @@ void GameScene::Initialize() {
 	// 3Dモデルの生成
 	model_ = Model::Create();
 
-	mode = 0;
+	rotaCount = 0;
+
+	rotaPlayer = 0;
+
+	count = 0;
+
+	rotaTime = 0;
 
 	//ワールドトランスフォームの初期化
 	worldTransform_.rotation_ = {0.0f, 0.0f, 0.0f};
 
 	worldTransform_.translation_ = {0, 0, 0};
 
+	worldTransform_.scale_ = {0.5,0.5,0.2};
+
+	Matrix4 matRotZ = MathUtility::Matrix4Identity();
 	Matrix4 matRotY = MathUtility::Matrix4Identity();
 
 	Matrix4 matTrans = MathUtility::Matrix4Identity();
 
 	//視点の移動ベクトル
 	moveTarget = Vector3(0, 0, 0);
+
+	rotaTarget = Vector3(0, 0, 0);
 
 	worldTransform_.Initialize();
 
@@ -67,21 +81,15 @@ void GameScene::Initialize() {
 	//カメラ注視点座標を設定
 	viewProjection_.target = {0, 0, 0};
 
+	viewProjection_.target = worldTransform_.translation_;
+
 	//ビュープロジェクションの初期化
 	viewProjection_.Initialize();
 }
 
 void GameScene::Update() {
 
-	if (input_->PushKey(DIK_Q)) {
-		if (mode == 0) {
-			mode = 1;
-		} else if (mode==1) {
-			mode = 0;
-		}
-	}
-
-	float rSpeed = 3.14 / 36;
+	float rSpeed = 0;
 	float kSpeed = 0.1f;
 
 	//視点の移動速さ
@@ -94,104 +102,126 @@ void GameScene::Update() {
 
 	Matrix4 matTrans = MathUtility::Matrix4Identity();
 
+	Matrix4 matRotZ = MathUtility::Matrix4Identity();
 	Matrix4 matRotY = MathUtility::Matrix4Identity();
 
-	if (mode == 0) {
+	kSpeed = 0.1f;
 
-		if (input_->PushKey(DIK_RIGHT)) {
-			sEyeSpeed = 0.2f;
-		} else if (input_->PushKey(DIK_LEFT)) {
-			sEyeSpeed = -0.2f;
-		}
 
-		if (input_->PushKey(DIK_UP)) {
-			EyeSpeed = 0.2f;
-		} else if (input_->PushKey(DIK_DOWN)) {
-			EyeSpeed = -0.2f;
-		}
-
-		Vector3 frontV = Vector3(
-		  viewProjection_.target.x - viewProjection_.eye.x,
-		  viewProjection_.target.y - viewProjection_.eye.y,
-		  viewProjection_.target.z - viewProjection_.eye.z);
-
-		Vector3 sideV = Vector3(
-		  1 * frontV.z - 0 * frontV.y, 0 * frontV.x - 0 * frontV.z, 0 * frontV.y - 1 * frontV.x);
-
-		if (input_->PushKey(DIK_W)) {
-			sSpeed *= frontV.x;
-			speed *= frontV.y;
-			fSpeed *= frontV.z;
-			matTrans.m[3][0] = sSpeed;
-			matTrans.m[3][1] = speed;
-			matTrans.m[3][2] = fSpeed;
-		} else if (input_->PushKey(DIK_S)) {
-			sSpeed *= frontV.x;
-			speed *= frontV.y;
-			fSpeed *= frontV.z;
-			matTrans.m[3][0] = -sSpeed;
-			matTrans.m[3][1] = -speed;
-			matTrans.m[3][2] = -fSpeed;
-		}
-
-		if (input_->PushKey(DIK_A)) {
-			sSpeed *= sideV.x;
-			fSpeed *= sideV.z;
-			matTrans.m[3][0] = -sSpeed;
-			matTrans.m[3][2] = -fSpeed;
-		} else if (input_->PushKey(DIK_D)) {
-			sSpeed *= sideV.x;
-			fSpeed *= sideV.z;
-			matTrans.m[3][0] = sSpeed;
-			matTrans.m[3][2] = fSpeed;
-		}
-
-		//視点移動(ベクトルの加算)
-		viewProjection_.target.x += sEyeSpeed;
-		viewProjection_.target.y += EyeSpeed;
-
-		//移動
-		worldTransform_.matWorld_ *= matRotY;
-		worldTransform_.matWorld_ *= matTrans;
-
+	// ----- 回避(回転モーション) ----- 
+	if (input_->PushKey(DIK_SPACE)) {
+		rotaTime = 20;
 	}
 
-	if (mode == 1) {
-
-		rSpeed = 3.14 / 90;
-		kSpeed = 0.1f;
-
-		//←、→で回転
-		if (input_->PushKey(DIK_D)) {
-			worldTransform_.rotation_.y += rSpeed;
-		} else if (input_->PushKey(DIK_A)) {
-			worldTransform_.rotation_.y -= rSpeed;
+	if (rotaTime>0) {
+		rotaTime--;
+		rSpeed = 3.14 / 10;
+		worldTransform_.rotation_.z -= rSpeed;
+		if (rotaTime <= 0) {
+			rSpeed = 0;
+			worldTransform_.rotation_.z = 0;
+			rotaTime = 0;
+		}
+	}
+	
+	// ----- 視点変更(視点回転) ----- 
+	if (input_->PushKey(DIK_LEFT)) {
+		if (rotaCount == 0) {
+			rSpeed = 3.14 / 2;
+			rotaPlayer += rSpeed;
+			rSpeed = 0;
+			if (rotaPlayer >= 6.28) {
+				rotaPlayer = 0;
+			}
+			rotaCount++;
 		}
 
-		moveTarget = {sinf(worldTransform_.rotation_.y), 0, cosf(worldTransform_.rotation_.y)};
-
-		if (input_->PushKey(DIK_W)) {
-			worldTransform_.translation_.x += moveTarget.x * kSpeed;
-			worldTransform_.translation_.z += moveTarget.z * kSpeed;
-		} else if (input_->PushKey(DIK_S)) {
-			worldTransform_.translation_.x += moveTarget.x * -kSpeed;
-			worldTransform_.translation_.z += moveTarget.z * -kSpeed;
+	} else if (input_->PushKey(DIK_RIGHT)) {
+		if (rotaCount == 0) {
+			rSpeed = 3.14 / 2;
+			rotaPlayer -= rSpeed;
+			rSpeed = 0;
+			if (rotaPlayer <= -6.28) {
+				rotaPlayer = 0;
+			}
+			rotaCount++;
 		}
+	}
 
-		worldTransform_.matWorld_ = MathUtility::Matrix4Identity();
+	moveTarget = {sinf(worldTransform_.rotation_.y), 0, cosf(worldTransform_.rotation_.y)};
+	rotaTarget = {sinf(rotaPlayer), 0, cosf(rotaPlayer)};
 
-		worldTransform_.matWorld_ = RotationYMatrix4(worldTransform_.matWorld_, worldTransform_.rotation_);
 
-		worldTransform_.matWorld_ = MoveMatrix4(worldTransform_.matWorld_, worldTransform_.translation_);
+	if (input_->PushKey(DIK_W)) {
+		worldTransform_.translation_.y += kSpeed;
+	} else if (input_->PushKey(DIK_S)) {
+		worldTransform_.translation_.y -= kSpeed;
+	}
 
-		/*matRotY.m[0][0] = cosf(rSpeed);
-		matRotY.m[0][2] = -sinf(rSpeed);
-		matRotY.m[2][0] = sinf(rSpeed);
-		matRotY.m[2][2] = cosf(rSpeed);*/
-		/*matTrans.m[3][0] = worldTransform_.translation_.x;
-		matTrans.m[3][1] = worldTransform_.translation_.y;
-		matTrans.m[3][2] = worldTransform_.translation_.z;*/
+	/*if (input_->PushKey(DIK_A)) {
+		if (rotaPlayer / 1.57 == 0) {
+			worldTransform_.translation_.x -= kSpeed;
+		} else if (rotaPlayer / 1.57 == 1 || rotaPlayer / 1.57 == -3) {
+			worldTransform_.translation_.z -= kSpeed;
+		} else if (rotaPlayer / 1.57 == 2 || rotaPlayer / 1.57 == -2) {
+			worldTransform_.translation_.x += kSpeed;
+		} else if (rotaPlayer / 1.57 == 3 || rotaPlayer / 1.57 == -1) {
+			worldTransform_.translation_.z += kSpeed;
+		}
+	} else if (input_->PushKey(DIK_D)) {
+		if (rotaPlayer / 1.57 == 0) {
+			worldTransform_.translation_.x += kSpeed;
+		} else if (rotaPlayer / 1.57 == 1 || rotaPlayer / 1.57 == -3) {
+			worldTransform_.translation_.z += kSpeed;
+		} else if (rotaPlayer / 1.57 == 2 || rotaPlayer / 1.57 == -2) {
+			worldTransform_.translation_.x -= kSpeed;
+		} else if (rotaPlayer / 1.57 == 3 || rotaPlayer / 1.57 == -1) {
+			worldTransform_.translation_.z -= kSpeed;
+		}
+	}*/
 
+	/*if (input_->PushKey(DIK_W)) {
+		worldTransform_.translation_.x += moveTarget.x * kSpeed;
+		worldTransform_.translation_.z += moveTarget.z * kSpeed;
+	} else if (input_->PushKey(DIK_S)) {
+		worldTransform_.translation_.x += moveTarget.x * -kSpeed;
+		worldTransform_.translation_.z += moveTarget.z * -kSpeed;
+	}*/
+
+	if (input_->PushKey(DIK_A)) {
+		worldTransform_.translation_.x += rotaTarget.z * kSpeed;
+		worldTransform_.translation_.z += rotaTarget.x * kSpeed;
+	} else if (input_->PushKey(DIK_D)) {
+		worldTransform_.translation_.x += rotaTarget.z * -kSpeed;
+		worldTransform_.translation_.z += rotaTarget.x * -kSpeed;
+	}
+
+	worldTransform_.matWorld_ = MathUtility::Matrix4Identity();
+
+	worldTransform_.matWorld_ = ScaleMatrix4(worldTransform_.matWorld_, worldTransform_.scale_);
+
+	worldTransform_.matWorld_ =
+	  RotationZMatrix4(worldTransform_.matWorld_, worldTransform_.rotation_);
+
+	worldTransform_.matWorld_ =
+	  RotationYMatrix4(worldTransform_.matWorld_, worldTransform_.rotation_);
+
+	worldTransform_.matWorld_ =
+	  MoveMatrix4(worldTransform_.matWorld_, worldTransform_.translation_);
+
+	//カメラ追従
+	viewProjection_.eye.x = -rotaTarget.x * 10 + worldTransform_.translation_.x;
+
+	viewProjection_.eye.z = -rotaTarget.z * 10 + worldTransform_.translation_.z;
+
+	viewProjection_.target = {
+	  rotaTarget.x * 10 + worldTransform_.translation_.x, 0,
+	  rotaTarget.z * 10 + worldTransform_.translation_.z};
+
+	count++;
+	if (count == 60) {
+		rotaCount = 0;
+		count = 0;
 	}
 
 	//行列の再計算
@@ -202,8 +232,8 @@ void GameScene::Update() {
 	//デバッグ用表示
 	debugText_->SetPos(50, 50);
 	debugText_->Printf(
-	  "rotation: %f ,%f ,%f", worldTransform_.rotation_.x, worldTransform_.rotation_.y,
-	  worldTransform_.rotation_.z);
+	  "transform: %f, %f, %f", worldTransform_.translation_.x, worldTransform_.translation_.y,
+	  worldTransform_.translation_.z);
 
 	//デバッグカメラの更新
 	debugCamera_->Update();
@@ -269,8 +299,7 @@ void GameScene::Draw() {
 #pragma endregion
 }
 
-Matrix4 ScaleMatrix4(Matrix4 matWorld , Vector3 scale) 
-{
+Matrix4 ScaleMatrix4(Matrix4 matWorld, Vector3 scale) {
 	Matrix4 matScale = MathUtility::Matrix4Identity();
 
 	matScale.m[0][0] = scale.x;
@@ -280,44 +309,40 @@ Matrix4 ScaleMatrix4(Matrix4 matWorld , Vector3 scale)
 	return matWorld *= matScale;
 }
 
-Matrix4 RotationXMatrix4(Matrix4 matWorld, Vector3 rotation)
-{
+Matrix4 RotationXMatrix4(Matrix4 matWorld, Vector3 rotation) {
 	Matrix4 matRotX = MathUtility::Matrix4Identity();
 
-	matRotX.m[1][1] =  cosf(rotation.x);
-	matRotX.m[1][2] =  sinf(rotation.x);
+	matRotX.m[1][1] = cosf(rotation.x);
+	matRotX.m[1][2] = sinf(rotation.x);
 	matRotX.m[2][1] = -sinf(rotation.x);
-	matRotX.m[2][2] =  cosf(rotation.x);
+	matRotX.m[2][2] = cosf(rotation.x);
 
 	return matWorld *= matRotX;
 }
 
-Matrix4 RotationYMatrix4(Matrix4 matWorld, Vector3 rotation)
-{
+Matrix4 RotationYMatrix4(Matrix4 matWorld, Vector3 rotation) {
 	Matrix4 matRotY = MathUtility::Matrix4Identity();
 
-	matRotY.m[0][0] =  cosf(rotation.y);
+	matRotY.m[0][0] = cosf(rotation.y);
 	matRotY.m[0][2] = -sinf(rotation.y);
-	matRotY.m[2][0] =  sinf(rotation.y);
-	matRotY.m[2][2] =  cosf(rotation.y);
+	matRotY.m[2][0] = sinf(rotation.y);
+	matRotY.m[2][2] = cosf(rotation.y);
 
 	return matWorld *= matRotY;
 }
 
-Matrix4 RotationZMatrix4(Matrix4 matWorld, Vector3 rotation)
-{
+Matrix4 RotationZMatrix4(Matrix4 matWorld, Vector3 rotation) {
 	Matrix4 matRotZ = MathUtility::Matrix4Identity();
 
-	matRotZ.m[0][0] =  cosf(rotation.z);
-	matRotZ.m[0][1] =  sinf(rotation.z);
+	matRotZ.m[0][0] = cosf(rotation.z);
+	matRotZ.m[0][1] = sinf(rotation.z);
 	matRotZ.m[1][0] = -sinf(rotation.z);
-	matRotZ.m[1][1] =  cosf(rotation.z);
+	matRotZ.m[1][1] = cosf(rotation.z);
 
 	return matWorld *= matRotZ;
 }
 
-Matrix4 MoveMatrix4(Matrix4 matWorld, Vector3 translation)
-{
+Matrix4 MoveMatrix4(Matrix4 matWorld, Vector3 translation) {
 	Matrix4 matTrans = MathUtility::Matrix4Identity();
 
 	matTrans.m[3][0] = translation.x;

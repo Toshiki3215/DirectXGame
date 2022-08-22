@@ -64,9 +64,15 @@ class GameScene {
 	DebugCamera* debugCamera_ = nullptr;
 
 	//uint32_t mode;
-	bool mode;
+	float rotaCount;
+
+	float rotaPlayer;
+	float count;
+
+	float rotaTime;
 
 	Vector3 moveTarget;
+	Vector3 rotaTarget;
 
 	/// <summary>
 	/// ゲームシーン用
