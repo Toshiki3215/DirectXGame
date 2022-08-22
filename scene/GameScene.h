@@ -55,7 +55,9 @@ class GameScene {
 	Model* model_ = nullptr;
 
 	//ワールドトランスフォーム
-	WorldTransform worldTransform_;
+	WorldTransform worldTransform_[2];
+
+	//WorldTransform worldTransform2_;
 
 	//ビュープロジェクション
 	ViewProjection viewProjection_;
@@ -64,7 +66,7 @@ class GameScene {
 	DebugCamera* debugCamera_ = nullptr;
 
 	//uint32_t mode;
-	bool mode;
+	bool mode = 0;
 
 	Vector3 moveTarget;
 
