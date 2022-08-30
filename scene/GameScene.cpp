@@ -107,7 +107,6 @@ void GameScene::Update() {
 
 	kSpeed = 0.1f;
 
-
 	// ----- 回避(回転モーション) ----- 
 	if (input_->PushKey(DIK_SPACE)) {
 		rotaTime = 20;
