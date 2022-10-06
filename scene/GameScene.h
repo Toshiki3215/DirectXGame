@@ -11,6 +11,9 @@
 #include "WorldTransform.h"
 #include "DebugCamera.h"
 #include "Player.h"
+#include "Enemy.h"
+#include "Skydome.h"
+#include"WorldMatrix4.h"
 
 /// <summary>
 /// ゲームシーン
@@ -43,20 +46,19 @@ class GameScene {
 	/// </summary>
 	void Draw();
 
+	/// <summary>
+	/// 衝突判定と応答
+	/// </summary>
+	void CheckAllCollisions();
+
   private: // メンバ変数
 	DirectXCommon* dxCommon_ = nullptr;
 	Input* input_ = nullptr;
 	Audio* audio_ = nullptr;
 	DebugText* debugText_ = nullptr;
 
-	//テクスチャハンドル
-	uint32_t textureHandle_ = 0;
-
 	//3Dモデル
 	Model* model_ = nullptr;
-
-	//ワールドトランスフォーム
-	//WorldTransform worldTransform_;
 
 	//ビュープロジェクション
 	ViewProjection viewProjection_;
@@ -64,18 +66,17 @@ class GameScene {
 	//デバッグカメラ
 	DebugCamera* debugCamera_ = nullptr;
 
-	/*float rotaCount;
-
-	float rotaPlayer;
-	float count;
-
-	float rotaTime;
-
-	Vector3 moveTarget;
-	Vector3 rotaTarget;*/
-
 	//自キャラ
 	Player* player_ = nullptr;
+
+	Enemy* enemy_ = nullptr;
+
+	Skydome* skydome_ = nullptr;
+
+	// 3Dモデル
+	Model* modelSkydome_ = nullptr;
+
+	//Model* playerModel_ = nullptr;
 
 	/// <summary>
 	/// ゲームシーン用

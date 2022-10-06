@@ -10,6 +10,12 @@ GameScene::~GameScene() {
 
 	//自キャラの解放
 	delete player_;
+
+	delete enemy_;
+
+	delete modelSkydome_;
+
+	//delete playerModel_;
 }
 
 void GameScene::Initialize() {
@@ -19,61 +25,45 @@ void GameScene::Initialize() {
 	audio_ = Audio::GetInstance();
 	debugText_ = DebugText::GetInstance();
 
-	//ファイル名を指定してテクスチャを読み込む
-	//textureHandle_ = TextureManager::Load("mario.jpg");
-
 	//自キャラの生成
 	player_ = new Player();
 
 	//自キャラの初期化
-	player_->Initialize(model_, textureHandle_);
+	player_->Initialize(model_);
 
-	//// 3Dモデルの生成
-	//model_ = Model::Create();
+	//エネミーの生成
+	enemy_ = new Enemy();
 
-	////ワールドトランスフォームの初期化
-	//worldTransform_.rotation_ = {0.0f, 0.0f, 0.0f};
+	//エネミーの初期化
+	enemy_->Initilize(model_);
 
-	//worldTransform_.translation_ = {0, 0, 0};
+	//天球の生成
+	skydome_ = new Skydome();
 
-	//worldTransform_.scale_ = {0.5,0.5,0.2};
+	//天球の初期化
+	skydome_->Initialize(model_);
 
-	//Matrix4 matRotZ = MathUtility::Matrix4Identity();
-	//Matrix4 matRotY = MathUtility::Matrix4Identity();
+	// 3Dモデルの生成
+	modelSkydome_ = Model::CreateFromOBJ("skydome", true);
 
-	//Matrix4 matTrans = MathUtility::Matrix4Identity();
-
-	////視点の移動ベクトル
-	//moveTarget = Vector3(0, 0, 0);
-
-	//rotaTarget = Vector3(0, 0, 0);
-
-	//worldTransform_.Initialize();
+	//playerModel_ = Model::CreateFromOBJ("Player", true);
 
 	//デバッグカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
 
 	viewProjection_ = debugCamera_->GetViewProjection();
 
-	//軸方向表示の表示を有効にする
-	AxisIndicator::GetInstance()->SetVisible(true);
-
 	//軸方向表示が参照するビュープロジェクションを指定する(アドレス渡し)
-	AxisIndicator::GetInstance()->SetTargetViewProjection(&debugCamera_->GetViewProjection());
 	AxisIndicator::GetInstance()->SetTargetViewProjection(&viewProjection_);
 
 	//ライン描画が参照するビュープロジェクションを指定する(アドレス渡し)
 	PrimitiveDrawer::GetInstance()->SetViewProjection(&debugCamera_->GetViewProjection());
-
-	//worldTransform_.matWorld_ = MathUtility::Matrix4Identity();
 
 	//カメラ視点座標を設定
 	viewProjection_.eye = {0.0f, 0.0f, -10.0f};
 
 	//カメラ注視点座標を設定
 	viewProjection_.target = {0, 0, 0};
-
-	//viewProjection_.target = worldTransform_.translation_;
 
 	//ビュープロジェクションの初期化
 	viewProjection_.Initialize();
@@ -82,25 +72,14 @@ void GameScene::Initialize() {
 void GameScene::Update() {
 
 	//自キャラの更新
-	player_->UpDate();
+	player_->UpDate(viewProjection_);
 
-	//カメラ追従
-	/*viewProjection_.eye.x = -rotaTarget.x * 10 + worldTransform_.translation_.x;
+	const float kEnemySpeed = 0.5f;
+	Vector3 velocity(0, 0, kEnemySpeed);
 
-	viewProjection_.eye.z = -rotaTarget.z * 10 + worldTransform_.translation_.z;
+	enemy_->Update(velocity);
 
-	viewProjection_.target = {
-	  rotaTarget.x * 10 + worldTransform_.translation_.x, 0,
-	  rotaTarget.z * 10 + worldTransform_.translation_.z};*/
-
-	//行列の再計算
-	viewProjection_.UpdateMatrix();
-
-	//デバッグ用表示
-	/*debugText_->SetPos(50, 50);
-	debugText_->Printf(
-	  "transform: %f, %f, %f", worldTransform_.translation_.x, worldTransform_.translation_.y,
-	  worldTransform_.translation_.z);*/
+	skydome_->Update();
 
 	//デバッグカメラの更新
 	debugCamera_->Update();
@@ -132,10 +111,15 @@ void GameScene::Draw() {
 	/// <summary>
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	// 3Dモデル描画
-	//model_->Draw(worldTransform_, viewProjection_, textureHandle_);
 	
 	//自キャラの描画
-	player_->Draw();
+	player_->Draw(viewProjection_);
+
+	//エネミーの描画
+	enemy_->Draw(viewProjection_);
+
+	//天球の描画
+	skydome_->Draw(viewProjection_);
 
 	/// </summary>
 
@@ -158,9 +142,63 @@ void GameScene::Draw() {
 
 	// デバッグテキストの描画
 	debugText_->DrawAll(commandList);
-	//
+	
 	// スプライト描画後処理
 	Sprite::PostDraw();
 
 #pragma endregion
+}
+
+void GameScene::CheckAllCollisions() {
+
+	//判定対象AとBの座標
+	Vector3 posA, posB;
+
+	//自弾リストの取得
+	const std::list<std::unique_ptr<PlayerBullet>>& playerBullets = player_->GetBullets();
+
+	#pragma region
+
+	//敵の座標
+	posA = enemy_->GetWorldPos();
+
+	for (const std::unique_ptr<PlayerBullet>& bullet : playerBullets) {
+
+		posB = bullet->GetWorldPos();
+
+		/*float pos = (posB.x - posA.x) * (posB.x - posA.x) + (posB.y - posA.y) * (posB.y - posA.y) +
+		            (posB.z - posA.z) * (posB.z - posA.z);*/
+
+		Vector3 distance = posB - posA;
+
+		float R1 = 500;
+		float R2 = 100;
+
+		/* if (
+		  (distance.x) * (distance.x) + (distance.y) * (distance.y) + (distance.z) * (distance.z) <=
+		  (R1 + R2)) {
+			enemy_->OnCollision();
+
+			bullet->OnCollision();
+		}*/
+
+		 if (
+		  (distance.x) * (distance.x) + (distance.y) * (distance.y) + (distance.z) * (distance.z) <=
+		  (R1 + R2) * 2) {
+			enemy_->OnCollision();
+
+			bullet->OnCollision();
+		}
+
+		/*float R = (R1 + R2) * 1000;
+
+		if (R >= pos) {
+			enemy_->OnCollision();
+
+			bullet->OnCollision();
+			}*/
+	}
+
+	#pragma endregion
+
 }

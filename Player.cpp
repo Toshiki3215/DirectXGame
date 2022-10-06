@@ -1,21 +1,15 @@
 #include "Player.h"
+#include "TextureManager.h"
+#include "WorldMatrix4.h"
 #include <cassert>
 
-Matrix4 ScaleMatrix4(Matrix4 matWorld, Vector3 scale);
-
-Matrix4 MoveMatrix4(Matrix4 matWorld, Vector3 translation);
-
-Matrix4 RotationZMatrix4(Matrix4 matWorld, Vector3 rotation);
-Matrix4 RotationYMatrix4(Matrix4 matWorld, Vector3 rotation);
-
-
-void Player::Initialize(Model* model, uint32_t textureHandle_)
+void Player::Initialize(Model* model)
 {
-	//NULLポイントチェック
-	//assert(model);
-
 	// 3Dモデルの生成
 	 model_ = Model::Create();
+
+	 //ファイル名を指定してテクスチャを読み込む
+	 textureHandle_ = TextureManager::Load("player.png");
 
 	 rotaCount = 0;
 
@@ -32,7 +26,7 @@ void Player::Initialize(Model* model, uint32_t textureHandle_)
 	//ワールドトランスフォームの初期化
 	 worldTransform_.rotation_ = {0.0f, 0.0f, 0.0f};
 
-	 worldTransform_.translation_ = {0, 0, 0};
+	 worldTransform_.translation_ = {0, -1, 0};
 
 	 worldTransform_.scale_ = {0.5,0.5,0.2};
 
@@ -46,11 +40,13 @@ void Player::Initialize(Model* model, uint32_t textureHandle_)
 
 	 rotaTarget = Vector3(0, 0, 0);
 
+	 playerPos = Vector3(0, 0, 0);
+
 	 worldTransform_.Initialize();
+
 }
 
-void Player::UpDate() 
-{
+void Player::UpDate(ViewProjection viewProjection) {
 	 float rSpeed = 0;
 	 float kSpeed = 0.1f;
 
@@ -68,6 +64,9 @@ void Player::UpDate()
 	 Matrix4 matRotY = MathUtility::Matrix4Identity();
 
 	 kSpeed = 0.1f;
+
+	 //デスフラグの立った弾を削除
+	 bullets_.remove_if([](std::unique_ptr<PlayerBullet>& bullet) { return bullet->IsDead(); });
 
 	// ----- 回避(回転モーション) -----
 	 if (input_->PushKey(DIK_SPACE)) {
@@ -109,7 +108,6 @@ void Player::UpDate()
 		}
 	}
 
-	 moveTarget = {sinf(worldTransform_.rotation_.y), 0, cosf(worldTransform_.rotation_.y)};
 	 rotaTarget = {sinf(rotaPlayer), 0, cosf(rotaPlayer)};
 
 	 if (input_->PushKey(DIK_W)) {
@@ -119,10 +117,10 @@ void Player::UpDate()
 	 }
 
 	 if (input_->PushKey(DIK_A)) {
-	    worldTransform_.translation_.x += rotaTarget.z * kSpeed;
+	    worldTransform_.translation_.x += rotaTarget.z * -kSpeed;
 	    worldTransform_.translation_.z += rotaTarget.x * kSpeed;
 	} else if (input_->PushKey(DIK_D)) {
-	    worldTransform_.translation_.x += rotaTarget.z * -kSpeed;
+	    worldTransform_.translation_.x += rotaTarget.z * kSpeed;
 	    worldTransform_.translation_.z += rotaTarget.x * -kSpeed;
 	}
 
@@ -145,64 +143,59 @@ void Player::UpDate()
 	     count = 0;
 	 }
 
+	 //キャラクター攻撃処理
+	 Attack();
+
+	 //弾更新
+	 for (std::unique_ptr<PlayerBullet>& bullet : bullets_) {
+		 bullet->Update(worldTransform_);
+	 }
+
+	 //カメラ追従
+	 viewProjection.eye.x = -rotaTarget.x * 10 + worldTransform_.translation_.x;
+
+	 viewProjection.eye.z = -rotaTarget.z * 10 + worldTransform_.translation_.z;
+
+	 viewProjection.target = {
+	   rotaTarget.x * 10 + worldTransform_.translation_.x, 0,
+	   rotaTarget.z * 10 + worldTransform_.translation_.z};
+
 	 //行列の再計算
 	 worldTransform_.TransferMatrix();
+
+	 //行列の再計算
+	 viewProjection.UpdateMatrix();
 }
 
-void Player::Draw() 
-{
+void Player::Draw(ViewProjection viewProjection) {
+	//3Dモデルを描画
+	model_->Draw(worldTransform_, viewProjection,textureHandle_);
+
+	for (std::unique_ptr<PlayerBullet>& bullet : bullets_) {
+		bullet->Draw(viewProjection);
+	}
 
 }
 
-Matrix4 ScaleMatrix4(Matrix4 matWorld, Vector3 scale) {
-	Matrix4 matScale = MathUtility::Matrix4Identity();
+void Player::Attack() { 
+	if (input_->PushKey(DIK_RETURN)) {
 
-	matScale.m[0][0] = scale.x;
-	matScale.m[1][1] = scale.y;
-	matScale.m[2][2] = scale.z;
+		playerPos = worldTransform_.translation_;
 
-	return matWorld *= matScale;
+		//弾の速度
+		const float kBulletSpeed = 1.0f;
+		Vector3 velocity(kBulletSpeed * rotaTarget.x, 0, kBulletSpeed * rotaTarget.z);
+
+		//弾生成し、初期化
+		std::unique_ptr<PlayerBullet> newBullet = std::make_unique<PlayerBullet>();
+		newBullet->Initilize(model_, playerPos,velocity);
+
+		//弾を登録する
+		bullets_.push_back(std::move(newBullet));
+
+	}
 }
 
-Matrix4 RotationXMatrix4(Matrix4 matWorld, Vector3 rotation) {
-	Matrix4 matRotX = MathUtility::Matrix4Identity();
+void Player::OnCollision() {
 
-	matRotX.m[1][1] = cosf(rotation.x);
-	matRotX.m[1][2] = sinf(rotation.x);
-	matRotX.m[2][1] = -sinf(rotation.x);
-	matRotX.m[2][2] = cosf(rotation.x);
-
-	return matWorld *= matRotX;
-}
-
-Matrix4 RotationYMatrix4(Matrix4 matWorld, Vector3 rotation) {
-	Matrix4 matRotY = MathUtility::Matrix4Identity();
-
-	matRotY.m[0][0] = cosf(rotation.y);
-	matRotY.m[0][2] = -sinf(rotation.y);
-	matRotY.m[2][0] = sinf(rotation.y);
-	matRotY.m[2][2] = cosf(rotation.y);
-
-	return matWorld *= matRotY;
-}
-
-Matrix4 RotationZMatrix4(Matrix4 matWorld, Vector3 rotation) {
-	Matrix4 matRotZ = MathUtility::Matrix4Identity();
-
-	matRotZ.m[0][0] = cosf(rotation.z);
-	matRotZ.m[0][1] = sinf(rotation.z);
-	matRotZ.m[1][0] = -sinf(rotation.z);
-	matRotZ.m[1][1] = cosf(rotation.z);
-
-	return matWorld *= matRotZ;
-}
-
-Matrix4 MoveMatrix4(Matrix4 matWorld, Vector3 translation) {
-	Matrix4 matTrans = MathUtility::Matrix4Identity();
-
-	matTrans.m[3][0] = translation.x;
-	matTrans.m[3][1] = translation.y;
-	matTrans.m[3][2] = translation.z;
-
-	return matWorld *= matTrans;
 }

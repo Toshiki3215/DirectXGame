@@ -61,24 +61,50 @@ int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {
 	gameScene = new GameScene();
 	gameScene->Initialize();
 
+	int scene = 2;
+
+	int titleTex = TextureManager::Load("Title.png");
+
+	Vector2 texPos = {0, 0};
+
+	Vector4 cr = {1, 1, 1, 0};
+
 	// メインループ
 	while (true) {
 		// メッセージ処理
 		if (win->ProcessMessage()) {
 			break;
 		}
-
+		
 		// 入力関連の毎フレーム処理
 		input->Update();
-		// ゲームシーンの毎フレーム処理
-		gameScene->Update();
+
+		if (input->PushKey(DIK_RETURN) && scene == 0) {
+			scene = 1;
+		}
+
+		if (scene == 2) {
+			// ゲームシーンの毎フレーム処理
+			gameScene->Update();
+		}
+
 		// 軸表示の更新
 		axisIndicator->Update();
 
 		// 描画開始
 		dxCommon->PreDraw();
-		// ゲームシーンの描画
-		gameScene->Draw();
+
+		if (scene == 0) {
+			Sprite::Create(titleTex, texPos, cr, texPos, false, false);
+			
+		}
+
+		if (scene == 2) {
+
+			// ゲームシーンの描画
+			gameScene->Draw();
+		}
+
 		// 軸表示の描画
 		axisIndicator->Draw();
 		// プリミティブ描画のリセット
