@@ -15,6 +15,8 @@ Matrix4 MoveMatrix4(Matrix4 matWorld, Vector3 translation);
 
 Matrix4 RotationYMatrix4(Matrix4 matWorld, Vector3 rotation);
 
+Vector3 HalfwayPoint(Vector3 A, Vector3 B, Vector3 C, Vector3 D, float t);
+
 void GameScene::Initialize() {
 
 	dxCommon_ = DirectXCommon::GetInstance();
@@ -28,12 +30,18 @@ void GameScene::Initialize() {
 	// 3Dモデルの生成
 	model_ = Model::Create();
 
-	mode = 0;
+	mode = FALSE;
+
+	bezierMode = FALSE;
 
 	//ワールドトランスフォームの初期化
 	worldTransform_.rotation_ = {0.0f, 0.0f, 0.0f};
 
+	boomerang_.rotation_ = {0.0f, 0.0f, 0.0f};
+
 	worldTransform_.translation_ = {0, 0, 0};
+
+	boomerang_.translation_ = {0, 0, 0};
 
 	Matrix4 matRotY = MathUtility::Matrix4Identity();
 
@@ -43,6 +51,8 @@ void GameScene::Initialize() {
 	moveTarget = Vector3(0, 0, 0);
 
 	worldTransform_.Initialize();
+
+	boomerang_.Initialize();
 
 	//デバッグカメラの生成
 	debugCamera_ = new DebugCamera(1280, 720);
@@ -60,6 +70,8 @@ void GameScene::Initialize() {
 	PrimitiveDrawer::GetInstance()->SetViewProjection(&debugCamera_->GetViewProjection());
 
 	worldTransform_.matWorld_ = MathUtility::Matrix4Identity();
+
+	boomerang_.matWorld_ = MathUtility::Matrix4Identity();
 
 	//カメラ視点座標を設定
 	viewProjection_.eye = {0.0f, 0.0f, -10.0f};
@@ -92,11 +104,26 @@ void GameScene::Update() {
 	float sSpeed = 0.02f;
 	float speed = 0.02f;
 
+	//nPD = next Point Distance
+	float nPDx = 10.0f;  
+	float nPDy = 3.0f;
+	float nPDz = 10.0f;
+
+	// --- ベジエ用 --- //
+	
+	// BP = Boomerang Point
+	Vector3 BP1 = worldTransform_.translation_;
+	Vector3 BP2 = {BP1.x + nPDx, BP1.y + nPDy, BP1.z + nPDz};
+	Vector3 BP3 = {BP1.x - nPDx, BP1.y + nPDy, BP1.z + nPDz};
+	Vector3 BP4 = worldTransform_.translation_;
+
+	// --- ベジエ用 --- //
+
 	Matrix4 matTrans = MathUtility::Matrix4Identity();
 
 	Matrix4 matRotY = MathUtility::Matrix4Identity();
 
-	if (mode == 0) {
+	if (mode == FALSE) {
 
 		if (input_->PushKey(DIK_RIGHT)) {
 			sEyeSpeed = 0.2f;
@@ -146,6 +173,30 @@ void GameScene::Update() {
 			matTrans.m[3][2] = fSpeed;
 		}
 
+		if (input_->PushKey(DIK_SPACE))
+		{
+			timer = 0;
+			bezierMode = TRUE;
+		
+		}
+		if (bezierMode == TRUE)
+		{
+			timer++;
+			t = (1.0 / splitNum) * timer;
+			if (timer >= splitNum)
+			{
+				bezierMode = FALSE;
+			}
+		
+		}
+
+		/*timer++;
+		t = (1.0 / splitNum) * timer;*/
+
+		//Vector3 Bezier = HalfwayPoint(BP1, BP2, BP3, BP4, t);
+
+		boomerang_.translation_ = HalfwayPoint(BP1, BP2, BP3, BP4, t);
+
 		//視点移動(ベクトルの加算)
 		viewProjection_.target.x += sEyeSpeed;
 		viewProjection_.target.y += EyeSpeed;
@@ -154,9 +205,12 @@ void GameScene::Update() {
 		worldTransform_.matWorld_ *= matRotY;
 		worldTransform_.matWorld_ *= matTrans;
 
+		boomerang_.matWorld_ = MathUtility::Matrix4Identity();
+		boomerang_.matWorld_ = MoveMatrix4(boomerang_.matWorld_, boomerang_.translation_);
+
 	}
 
-	if (mode == 1) {
+	if (mode == TRUE) {
 
 		rSpeed = 3.14 / 90;
 		kSpeed = 0.1f;
@@ -198,12 +252,13 @@ void GameScene::Update() {
 	viewProjection_.UpdateMatrix();
 
 	worldTransform_.TransferMatrix();
+	boomerang_.TransferMatrix();
 
 	//デバッグ用表示
 	debugText_->SetPos(50, 50);
 	debugText_->Printf(
-	  "rotation: %f ,%f ,%f", worldTransform_.rotation_.x, worldTransform_.rotation_.y,
-	  worldTransform_.rotation_.z);
+	  "rotation: %f ,%f ,%f", boomerang_.translation_.x, boomerang_.translation_.y,
+	  boomerang_.translation_.z);
 
 	//デバッグカメラの更新
 	debugCamera_->Update();
@@ -236,7 +291,10 @@ void GameScene::Draw() {
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	// 3Dモデル描画
 	// model_->Draw(worldTransform_, debugCamera_->GetViewProjection(), textureHandle_);
+
 	model_->Draw(worldTransform_, viewProjection_, textureHandle_);
+	model_->Draw(boomerang_, viewProjection_, textureHandle_);
+
 	/*for (size_t i = 0; i < _countof(worldTransform_); i++) {
 	    model_->Draw(worldTransform_[i], viewProjection_, textureHandle_);
 	}*/
@@ -325,4 +383,52 @@ Matrix4 MoveMatrix4(Matrix4 matWorld, Vector3 translation)
 	matTrans.m[3][2] = translation.z;
 
 	return matWorld *= matTrans;
+}
+
+Vector3 HalfwayPoint(Vector3 A, Vector3 B, Vector3 C, Vector3 D, float t)
+{ 
+	// ----- 第1中間点 ----- //
+
+	Vector3 AB = {0, 0, 0};
+
+	AB.x = ((1 - t) * A.x + t * B.x);
+	AB.y = ((1 - t) * A.y + t * B.y);
+	AB.z = ((1 - t) * A.z + t * B.z);
+
+	Vector3 BC = {0, 0, 0};
+
+	BC.x = ((1 - t) * B.x + t * C.x);
+	BC.y = ((1 - t) * B.y + t * C.y);
+	BC.z = ((1 - t) * B.z + t * C.z);
+
+	Vector3 CD = {0, 0, 0};
+
+	CD.x = ((1 - t) * C.x + t * D.x);
+	CD.y = ((1 - t) * C.y + t * D.y);
+	CD.z = ((1 - t) * C.z + t * D.z);
+
+	// ----- 第2中間点 ----- //
+
+	Vector3 AC = {0, 0, 0};
+
+	AC.x = ((1 - t) * AB.x + t * BC.x);
+	AC.y = ((1 - t) * AB.y + t * BC.y);
+	AC.z = ((1 - t) * AB.z + t * BC.z);
+
+	Vector3 BD = {0, 0, 0};
+
+	BD.x = ((1 - t) * BC.x + t * CD.x);
+	BD.y = ((1 - t) * BC.y + t * CD.y);
+	BD.z = ((1 - t) * BC.z + t * CD.z);
+
+	// ----- ベジエ本体座標 ----- //
+
+	Vector3 AD = {0, 0, 0};
+
+	AD.x = ((1 - t) * AC.x + t * BD.x);
+	AD.y = ((1 - t) * AC.y + t * BD.y);
+	AD.z = ((1 - t) * AC.z + t * BD.z);
+
+	return AD;
+
 }

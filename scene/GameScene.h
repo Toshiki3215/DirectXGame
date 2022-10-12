@@ -57,6 +57,8 @@ class GameScene {
 	//ワールドトランスフォーム
 	WorldTransform worldTransform_;
 
+	WorldTransform boomerang_;
+
 	//ビュープロジェクション
 	ViewProjection viewProjection_;
 
@@ -71,4 +73,12 @@ class GameScene {
 	/// <summary>
 	/// ゲームシーン用
 	/// </summary>
+	
+	int splitNum = 100;
+	int timer = 0;
+
+	float t = 0;
+
+	bool bezierMode;
+
 };
