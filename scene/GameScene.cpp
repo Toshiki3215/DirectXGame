@@ -52,7 +52,8 @@ void GameScene::Update() {
 	const float kSpeed = 0.1f;
 
 	//回転角度(2度ずつ(180/90))
-	const float rSpeed = XM_PI / 90.0f;
+	//const float rSpeed = XM_PI / 90.0f;
+	const float rSpeed = XM_PI / 360.0f;
 
 	//←、→で回転
 	if (input_->PushKey(DIK_RIGHT)) {
@@ -75,12 +76,12 @@ void GameScene::Update() {
 
 	//カメラ追従
 	viewProjection_.eye.x =
-	  -direction.x * 5 + worldTransform_[0].translation_.x;
+	  -direction.x * 10 + worldTransform_[0].translation_.x;
 	  // -sinf(worldTransform_[0].rotation_.y);
 	  // -sinf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.x;
 
 	viewProjection_.eye.z =
-	  -direction.z * 5 + worldTransform_[0].translation_.z;
+	  -direction.z * 10 + worldTransform_[0].translation_.z;
 	  //-cosf(worldTransform_[0].rotation_.y);
 	  // -cosf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.z;
 
@@ -101,7 +102,7 @@ void GameScene::Update() {
 	viewProjection_.UpdateMatrix();
 
 	// ----- デバック ----- //
-	/*std::string strDebug_1 = std::string("translation:(") +
+	std::string strDebug_1 = std::string("translation:(") +
 	                         std::to_string(worldTransform_[0].translation_.x) + std::string(",") +
 	                         std::to_string(worldTransform_[0].translation_.y) + std::string(",") +
 	                         std::to_string(worldTransform_[0].translation_.z) + std::string(")");
@@ -127,7 +128,7 @@ void GameScene::Update() {
 
 	debugText_->Print(strDebug_3, 50, 100, 1.0f);
 
-	debugText_->Print(strDebug_4, 50, 125, 1.0f);*/
+	debugText_->Print(strDebug_4, 50, 125, 1.0f);
 
 }
 
