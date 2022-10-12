@@ -11,11 +11,13 @@ GameScene::~GameScene() {
 	delete debugCamera_;
 }
 
+Matrix4 ScaleMatrix4(Matrix4 matWorld, Vector3 scale);
+
 Matrix4 MoveMatrix4(Matrix4 matWorld, Vector3 translation);
 
 Matrix4 RotationYMatrix4(Matrix4 matWorld, Vector3 rotation);
 
-Vector3 HalfwayPoint(Vector3 A, Vector3 B, Vector3 C, Vector3 D, float t);
+Vector3 HalfwayPoint(Vector3 a, Vector3 b, Vector3 c, Vector3 d, float t);
 
 void GameScene::Initialize() {
 
@@ -37,11 +39,13 @@ void GameScene::Initialize() {
 	//ワールドトランスフォームの初期化
 	worldTransform_.rotation_ = {0.0f, 0.0f, 0.0f};
 
-	boomerang_.rotation_ = {0.0f, 0.0f, 0.0f};
-
 	worldTransform_.translation_ = {0, 0, 0};
 
+	boomerang_.rotation_ = {0.0f, 0.0f, 0.0f};
+
 	boomerang_.translation_ = {0, 0, 0};
+
+	boomerang_.scale_ = {1.0f, 0.3f, 0.3f};
 
 	Matrix4 matRotY = MathUtility::Matrix4Identity();
 
@@ -105,17 +109,17 @@ void GameScene::Update() {
 	float speed = 0.02f;
 
 	//nPD = next Point Distance
-	float nPDx = 10.0f;  
+	float nPDx = 20.0f;  
 	float nPDy = 3.0f;
-	float nPDz = 10.0f;
+	float nPDz = 20.0f;
 
 	// --- ベジエ用 --- //
 	
 	// BP = Boomerang Point
-	Vector3 BP1 = worldTransform_.translation_;
+	Vector3 BP1 = {worldTransform_.matWorld_.m[3][0], worldTransform_.matWorld_.m[3][1],worldTransform_.matWorld_.m[3][2]};
 	Vector3 BP2 = {BP1.x + nPDx, BP1.y + nPDy, BP1.z + nPDz};
 	Vector3 BP3 = {BP1.x - nPDx, BP1.y + nPDy, BP1.z + nPDz};
-	Vector3 BP4 = worldTransform_.translation_;
+	Vector3 BP4 = BP1;
 
 	// --- ベジエ用 --- //
 
@@ -183,18 +187,15 @@ void GameScene::Update() {
 		{
 			timer++;
 			t = (1.0 / splitNum) * timer;
+			boomerang_.rotation_.y++;
 			if (timer >= splitNum)
 			{
+				boomerang_.rotation_.y = 0;
 				bezierMode = FALSE;
 			}
 		
 		}
-
-		/*timer++;
-		t = (1.0 / splitNum) * timer;*/
-
-		//Vector3 Bezier = HalfwayPoint(BP1, BP2, BP3, BP4, t);
-
+		
 		boomerang_.translation_ = HalfwayPoint(BP1, BP2, BP3, BP4, t);
 
 		//視点移動(ベクトルの加算)
@@ -206,6 +207,8 @@ void GameScene::Update() {
 		worldTransform_.matWorld_ *= matTrans;
 
 		boomerang_.matWorld_ = MathUtility::Matrix4Identity();
+		boomerang_.matWorld_ = ScaleMatrix4(boomerang_.matWorld_, boomerang_.scale_);
+		boomerang_.matWorld_ = RotationYMatrix4(boomerang_.matWorld_, boomerang_.rotation_);
 		boomerang_.matWorld_ = MoveMatrix4(boomerang_.matWorld_, boomerang_.translation_);
 
 	}
@@ -385,8 +388,13 @@ Matrix4 MoveMatrix4(Matrix4 matWorld, Vector3 translation)
 	return matWorld *= matTrans;
 }
 
-Vector3 HalfwayPoint(Vector3 A, Vector3 B, Vector3 C, Vector3 D, float t)
+Vector3 HalfwayPoint(Vector3 a, Vector3 b, Vector3 c, Vector3 d, float t)
 { 
+	Vector3 A = a;
+	Vector3 B = b;
+	Vector3 C = c;
+	Vector3 D = d;
+
 	// ----- 第1中間点 ----- //
 
 	Vector3 AB = {0, 0, 0};
