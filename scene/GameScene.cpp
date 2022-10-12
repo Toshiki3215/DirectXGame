@@ -17,7 +17,7 @@ Matrix4 MoveMatrix4(Matrix4 matWorld, Vector3 translation);
 
 Matrix4 RotationYMatrix4(Matrix4 matWorld, Vector3 rotation);
 
-Vector3 HalfwayPoint(Vector3 a, Vector3 b, Vector3 c, Vector3 d, float t);
+Vector3 HalfwayPoint(Vector3 A, Vector3 B, Vector3 C, Vector3 D, float t);
 
 void GameScene::Initialize() {
 
@@ -109,7 +109,7 @@ void GameScene::Update() {
 	float speed = 0.02f;
 
 	//nPD = next Point Distance
-	float nPDx = 20.0f;  
+	float nPDx = 40.0f;  
 	float nPDy = 3.0f;
 	float nPDz = 20.0f;
 
@@ -179,7 +179,7 @@ void GameScene::Update() {
 
 		if (input_->PushKey(DIK_SPACE))
 		{
-			timer = 0;
+			//timer = 0;
 			bezierMode = TRUE;
 		
 		}
@@ -191,6 +191,7 @@ void GameScene::Update() {
 			if (timer >= splitNum)
 			{
 				boomerang_.rotation_.y = 0;
+				timer = 0;
 				bezierMode = FALSE;
 			}
 		
@@ -241,14 +242,6 @@ void GameScene::Update() {
 
 		worldTransform_.matWorld_ = MoveMatrix4(worldTransform_.matWorld_, worldTransform_.translation_);
 
-		/*matRotY.m[0][0] = cosf(rSpeed);
-		matRotY.m[0][2] = -sinf(rSpeed);
-		matRotY.m[2][0] = sinf(rSpeed);
-		matRotY.m[2][2] = cosf(rSpeed);*/
-		/*matTrans.m[3][0] = worldTransform_.translation_.x;
-		matTrans.m[3][1] = worldTransform_.translation_.y;
-		matTrans.m[3][2] = worldTransform_.translation_.z;*/
-
 	}
 
 	//行列の再計算
@@ -293,14 +286,8 @@ void GameScene::Draw() {
 	/// <summary>
 	/// ここに3Dオブジェクトの描画処理を追加できる
 	// 3Dモデル描画
-	// model_->Draw(worldTransform_, debugCamera_->GetViewProjection(), textureHandle_);
-
 	model_->Draw(worldTransform_, viewProjection_, textureHandle_);
 	model_->Draw(boomerang_, viewProjection_, textureHandle_);
-
-	/*for (size_t i = 0; i < _countof(worldTransform_); i++) {
-	    model_->Draw(worldTransform_[i], viewProjection_, textureHandle_);
-	}*/
 
 	/// </summary>
 
@@ -388,13 +375,8 @@ Matrix4 MoveMatrix4(Matrix4 matWorld, Vector3 translation)
 	return matWorld *= matTrans;
 }
 
-Vector3 HalfwayPoint(Vector3 a, Vector3 b, Vector3 c, Vector3 d, float t)
+Vector3 HalfwayPoint(Vector3 A, Vector3 B, Vector3 C, Vector3 D, float t)
 { 
-	Vector3 A = a;
-	Vector3 B = b;
-	Vector3 C = c;
-	Vector3 D = d;
-
 	// ----- 第1中間点 ----- //
 
 	Vector3 AB = {0, 0, 0};
