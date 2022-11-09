@@ -38,7 +38,7 @@ void GameScene::Initialize() {
 	Matrix4 matRotY = MathUtility::Matrix4Identity();
 
 	Matrix4 matTrans = MathUtility::Matrix4Identity();
-
+	
 	//視点の移動ベクトル
 	moveTarget = Vector3(0, 0, 0);
 
