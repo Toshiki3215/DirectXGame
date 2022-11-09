@@ -58,10 +58,10 @@ void GameScene::Update()
 
 	//前確認用モデルの座標
 	worldTransform_[1].translation_.x =
-	  sinf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.x;
+	  sinf(worldTransform_[0].rotation_.y) * 10 + worldTransform_[0].translation_.x;
 
 	worldTransform_[1].translation_.z =
-	  cosf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.z;
+	  cosf(worldTransform_[0].rotation_.y) * 10 + worldTransform_[0].translation_.z;
 
 	//↑、↓で移動
 	if (input_->PushKey(DIK_UP)) {
