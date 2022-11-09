@@ -28,7 +28,7 @@ void GameScene::Initialize() {
 	// 3Dモデルの生成
 	model_ = Model::Create();
 
-	mode = 0;
+	mode = 1;
 
 	//ワールドトランスフォームの初期化
 	worldTransform_.rotation_ = {0.0f, 0.0f, 0.0f};
