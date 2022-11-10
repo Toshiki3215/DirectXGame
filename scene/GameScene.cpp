@@ -85,16 +85,16 @@ void GameScene::Update() {
 	  //-cosf(worldTransform_[0].rotation_.y);
 	  // -cosf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.z;
 
-	viewProjection_.target = {
+	/*viewProjection_.target = {
 	  direction.x * 5 + worldTransform_[0].translation_.x, 0,
-	  direction.z * 5 + worldTransform_[0].translation_.z};
+	  direction.z * 5 + worldTransform_[0].translation_.z};*/
 
 	//前確認用モデルの座標
 	worldTransform_[1].translation_.x =
-	  sinf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.x;
+	  -sinf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.x;
 
 	worldTransform_[1].translation_.z =
-	  cosf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.z;
+	  -cosf(worldTransform_[0].rotation_.y) + worldTransform_[0].translation_.z;
 
 	worldTransform_[0].UpdateMatrix();
 	worldTransform_[1].UpdateMatrix();
